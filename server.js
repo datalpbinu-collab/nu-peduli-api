@@ -14,18 +14,19 @@ app.use(express.static('public'));
 
 // --- 2. DATABASE ---
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'geobencana',
-    password: '12345678', // GANTI PASSWORD ANDA
-    port: 5432,
+    // Jika ada DATABASE_URL (di cloud), gunakan itu. 
+    // Jika tidak ada (di laptop), gunakan setting lokal.
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 pool.connect((err) => {
-    if (err) console.error('❌ Database Error:', err.stack);
-    else console.log('✅ Sistem Pusdatin & Surat Perintah Aktif');
+    if (err) {
+        console.error('❌ Database Connection Error:', err.stack);
+    } else {
+        console.log('✅ Sistem Database Pusdatin Online');
+    }
 });
-
 // --- 3. AUTHENTICATION ---
 app.post('/api/auth/register', async (req, res) => {
     const { full_name, region, username, password } = req.body;
@@ -169,8 +170,9 @@ app.post('/api/reports/close', async (req, res) => {
 });
 
 // --- 7. START SERVER ---
-app.listen(port, () => {
-    console.log(`============================================`);
+const port = process.env.PORT || 3000; 
+
+app.listen(port, "0.0.0.0", () => {
     console.log(`🚀 SERVER NU PEDULI JATENG ONLINE`);
     console.log(`📍 Port: ${port}`);
     console.log('============================================');
