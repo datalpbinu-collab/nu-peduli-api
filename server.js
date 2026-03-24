@@ -10,7 +10,10 @@ const PORT_SERVER = process.env.PORT || 3000; // Nama variabel diganti agar unik
 app.use(cors());
 app.use(express.json({ limit: '15mb' })); 
 app.use(express.urlencoded({ limit: '15mb', extended: true }));
-app.use(express.static('public')); 
+app.use(express.static('public'));
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/index.html');
+}); 
 
 // --- 2. DATABASE (Railway Optimized) ---
 const pool = new Pool({
