@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pusdatin NU Peduli Jateng - Dashboard Publik</title>
+    
+    <!-- Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; --bg: #f4f7f6; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background-color: var(--bg); padding-bottom: 80px; font-size: 0.85rem; }
+        
+        header { background: var(--nu-green); color: white; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--nu-gold); position: sticky; top: 0; z-index: 2000; }
+        header img { height: 35px; margin-right: 10px; }
+        .header-brand { display: flex; align-items: center; }
+
+        /* HERO STATS */
+        .hero-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; background: white; border-bottom: 1px solid #ddd; }
+        .sum-card { text-align: center; padding: 8px; border-radius: 10px; background: #f8fafc; border: 1px solid #eee; }
+        .sum-value { display: block; font-size: 1rem; font-weight: 700; color: var(--nu-green); }
+        .sum-label { font-size: 0.5rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
+
+        .container { padding: 15px; }
+        #map { height: 380px; width: 100%; border-radius: 20px; margin-bottom: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1; }
+
+        /* CARD & TABLES */
+        .card { background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h3 { font-size: 0.9rem; font-weight: 700; color: var(--nu-green); border-bottom: 2px solid var(--nu-gold); display: flex; align-items: center; gap: 10px; padding-bottom: 5px; margin-bottom: 15px; }
+
+        .filter-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filter-group select, .filter-group input { flex: 1; min-width: 120px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.75rem; font-family: inherit; }
+
+        .table-res { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; min-width: 550px; }
+        th { background: #f8fafc; padding: 12px 10px; text-align: left; color: #64748b; border-bottom: 2px solid #eee; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; }
+
+        /* PAGINATION */
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+        .btn-page { background: white; border: 1px solid #ddd; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-weight: bold; color: var(--nu-green); }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* POPUP MAP */
+        .popup-header { border-bottom: 2px solid var(--nu-green); padding-bottom: 5px; margin-bottom: 8px; }
+        .popup-stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin: 10px 0; }
+        .popup-stat-box { text-align: center; padding: 5px; border-radius: 6px; font-size: 0.6rem; font-weight: bold; }
+        .box-red { background: #fee2e2; color: #991b1b; }
+        .box-yellow { background: #fef3c7; color: #92400e; }
+        .box-green { background: #dcfce7; color: #166534; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .modal-content { background: white; padding: 20px; border-radius: 20px; max-width: 500px; margin: auto; }
+
+        .btn-mini { padding: 5px 10px; border-radius: 6px; border: none; color: white; cursor: pointer; font-size: 0.65rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; }
+        .disaster-icon { background: white; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-align: center; line-height: 28px; font-size: 16px; }
+        
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; padding: 10px 0; border-top: 1px solid #ddd; z-index: 2000; }
+        .nav-item { flex: 1; text-align: center; color: #94a3b8; text-decoration: none; font-size: 0.6rem; font-weight: 600; }
+        .nav-item.active { color: var(--nu-green); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-brand">
+        <img src="https://pwnu-jateng.org/uploads/infoumum/20250825111304-2025-08-25infoumum111252.png">
+        <h1>NU PEDULI JATENG</h1>
+    </div>
+    <a href="login.html" style="font-size:0.6rem; color:white; border:1px solid white; padding:5px 10px; border-radius:20px; text-decoration:none;">STAFF LOGIN</a>
+</header>
+
+<div class="hero-summary">
+    <div class="sum-card"><i class="fas fa-users"></i><span class="sum-value" id="h-jiwa">0</span><span class="sum-label">Jiwa</span></div>
+    <div class="sum-card"><i class="fas fa-bullhorn"></i><span class="sum-value" id="h-bencana">0</span><span class="sum-label">Bencana</span></div>
+    <div class="sum-card"><i class="fas fa-box-open"></i><span class="sum-value" id="h-paket">0</span><span class="sum-label">Paket</span></div>
+    <div class="sum-card"><i class="fas fa-hand-holding-heart"></i><span class="sum-value" id="h-manfaat">0</span><span class="sum-label">Manfaat</span></div>
+</div>
+
+<div class="container">
+    <!-- PETA JATENG (Vibrant Style) -->
+    <div id="map"></div>
+
+    <!-- 1. TABEL KEJADIAN -->
+    <div class="card">
+        <h3><i class="fas fa-exclamation-triangle"></i> Rangkuman Kejadian</h3>
+        <div class="filter-group">
+            <select id="k-filter-tipe" onchange="resetPages(); filterKejadian();"><option value="">Semua Bencana</option><option>Banjir</option><option>Longsor</option><option>Gempa Bumi</option></select>
+            <input type="text" id="k-filter-lok" placeholder="Kabupaten..." onkeyup="resetPages(); filterKejadian();">
+        </div>
+        <div class="table-res">
+            <table>
+                <thead><tr><th>Tipe</th><th>Lokasi</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody id="table-kejadian"></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="pag-kejadian"></div>
+    </div>
+
+    <!-- 2. TABEL AKSI NU -->
+    <div class="card">
+        <h3><i class="fas fa-hand-holding-heart"></i> Rangkuman Aksi NU</h3>
+        <div class="filter-group">
+            <input type="text" id="a-filter-lok" placeholder="Cari Kabupaten..." onkeyup="resetPages(); filterAksi();">
+        </div>
+        <div class="table-res">
+            <table>
+                <thead><tr><th>Wilayah</th><th>Kluster</th><th>Paket</th><th>Jiwa</th><th>Aksi</th></tr></thead>
+                <tbody id="table-aksi"></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="pag-aksi"></div>
+    </div>
+
+    <!-- 3. TABEL KEBUTUHAN -->
+    <div class="card">
+        <h3><i class="fas fa-clipboard-list"></i> Kebutuhan Mendesak</h3>
+        <div class="filter-group">
+            <select id="n-filter-tipe" onchange="resetPages(); filterKebutuhan();"><option value="">Tipe Bencana</option><option>Banjir</option><option>Longsor</option></select>
+            <input type="text" id="n-filter-lok" placeholder="Kabupaten..." onkeyup="resetPages(); filterKebutuhan();">
+            <input type="text" id="n-filter-item" placeholder="Cari Item (Logistik/Kasur)..." onkeyup="resetPages(); filterKebutuhan();">
+        </div>
+        <div class="table-res">
+            <table>
+                <thead><tr><th>Bencana</th><th>Kabupaten</th><th>Item Mendesak</th><th>Aksi</th></tr></thead>
+                <tbody id="table-kebutuhan"></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="pag-kebutuhan"></div>
+    </div>
+</div>
+
+<div id="viewModal" class="modal">
+    <div class="modal-content"><span onclick="closeModal()" style="float:right; cursor:pointer; font-size:1.5rem;">&times;</span><h3 id="m-title" style="color:var(--nu-green); margin:0;">Detail</h3><hr><div id="m-body"></div></div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-item active"><i class="fas fa-th-large"></i>Dashboard</a>
+    <a href="profil.html" class="nav-item"><i class="fas fa-info-circle"></i>Profil</a>
+    <a href="donasi.html" class="nav-item"><i class="fas fa-heart"></i>Donasi</a>
+</nav>
+
+<script>
+    const API_URL = window.location.origin; 
+    let allData = [], allActions = [];
+    const rowsPerPage = 10;
+    let pageK = 1, pageA = 1, pageN = 1;
+
+    // 1. INITIALIZE MAP
+    const map = L.map('map', { zoomControl: true }).setView([-7.15, 110.14], 8);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+
+    function getIcon(type) {
+        const iconMap = { 'Banjir': 'fa-water', 'Longsor': 'fa-mountain', 'Gempa Bumi': 'fa-house-damage' };
+        return L.divIcon({ html: `<div class="disaster-icon" style="color:#006432"><i class="fas ${iconMap[type] || 'fa-exclamation-triangle'}"></i></div>`, className: 'custom-icon', iconSize: [32, 32] });
+    }
+function getStatusText(status) {
+  if (status === "Pending") {
+    return "🟡 Assessment berjalan";
+  } else if (status === "Verified") {
+    return "✅ Terverifikasi";
+  } else {
+    return status || "-";
+  }
+}
+function getDampakSection(r) {
+  const d = r.dampak_manusia;
+
+  if (!d || (!d.meninggal && !d.hilang && !d.terdampak)) {
+    return `
+      <p style="
+        font-size:0.7rem; 
+        background:#fef3c7; 
+        color:#92400e; 
+        padding:6px; 
+        border-radius:6px;
+        font-weight:500;
+      ">
+        ⚠️ Data dampak masih dalam proses assessment
+      </p>
+    `;
+  }
+
+  return `
+    <div class="popup-stat-grid">
+      <div class="popup-stat-box box-red">
+        Meninggal<br>${d.meninggal || 0}
+      </div>
+      <div class="popup-stat-box box-yellow">
+        Hilang<br>${d.hilang || 0}
+      </div>
+      <div class="popup-stat-box box-green">
+        Terdampak<br>${d.terdampak || 0}
+      </div>
+    </div>
+  `;
+}
+    // 2. LOAD DATA
+    async function loadData() {
+        try {
+            const resR = await fetch(`${API_URL}/api/reports/public`);
+            allData = await resR.json();
+             console.log(allData);
+            const resA = await fetch(`${API_URL}/api/actions/all?role=SUPER_ADMIN`);
+            allActions = await resA.json();
+
+            renderHero();
+            filterKejadian();
+            filterAksi();
+            filterKebutuhan();
+            renderMarkers();
+        } catch (e) { 
+            console.error("Gagal memuat data:", e);
+            alert("Koneksi ke server terputus.");
+        }
+    }
+function formatHeroValue(val) {
+  if (!val || val === 0) return "🔄";
+  return val.toLocaleString('id-ID');
+}
+    function renderHero() {
+        let jiwa = 0, pkt = 0, mnf = 0;
+        allData.forEach(r => jiwa += parseInt(r.dampak_manusia?.terdampak || 0));
+        allActions.forEach(a => { pkt += parseInt(a.jumlah_paket || 0); mnf += parseInt(a.penerima_manfaat || 0); });
+        document.getElementById('h-jiwa').innerText = formatHeroValue(jiwa);
+document.getElementById('h-bencana').innerText = formatHeroValue(allData.length);
+document.getElementById('h-paket').innerText = formatHeroValue(pkt);
+document.getElementById('h-manfaat').innerText = formatHeroValue(mnf);
+    }
+
+    // 3. POPUP PETA DETIL
+    function renderMarkers() {
+        map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
+        allData.forEach(r => {
+            const marker = L.marker([r.latitude, r.longitude], {icon: getIcon(r.disaster_type)}).addTo(map);
+            marker.bindPopup(`
+  <div style="width:250px; font-family:'Poppins';">
+    
+    <div class="popup-header">
+      <h4 style="margin:0; color:var(--nu-green);">
+        ${r.disaster_type}
+      </h4>
+      <small>📍 ${r.city_district || '-'}, Kec. ${r.kecamatan || '-'}</small>
+    </div>
+
+    <!-- PRIORITAS -->
+    <p style="
+      font-size:0.75rem; 
+      color:#b45309; 
+      background:#fffbeb; 
+      padding:6px; 
+      border-radius:6px;
+      font-weight:700;
+      margin-bottom:6px;
+    ">
+      🆘 Prioritas: ${r.kebutuhan?.logistik || 'Logistik'} (Mendesak)
+    </p>
+
+    <!-- DAMPAK -->
+    ${getDampakSection(r)}
+
+    <!-- STATUS (dibawah & kecil) -->
+    <p style="
+      font-size:0.65rem; 
+      color:#64748b; 
+      margin-top:6px;
+    ">
+      ${getStatusText(r.status_bencana)}
+    </p>
+
+    <button 
+      class="btn-mini" 
+      style="background:var(--nu-green); width:100%; justify-content:center; margin-top:5px;" 
+      onclick="viewKejadian(${r.id})">
+      VIEW DETAIL
+    </button>
+  </div>
+`);
+        });
+    }
+
+    // 4. TRIPLE PAGINATION LOGIC
+    function createPagUI(id, page, total, fnName) {
+        document.getElementById(id).innerHTML = `
+            <button class="btn-page" ${page===1?'disabled':''} onclick="${fnName}(-1)"><i class="fas fa-chevron-left"></i></button>
+            <span style="font-size:0.7rem; font-weight:bold;">Hal ${page} / ${total||1}</span>
+            <button class="btn-page" ${page===total||total===0?'disabled':''} onclick="${fnName}(1)"><i class="fas fa-chevron-right"></i></button>
+        `;
+    }
+
+    function resetPages() { pageK=1; pageA=1; pageN=1; }
+
+    function filterKejadian() {
+        const t = document.getElementById('k-filter-tipe').value;
+        const l = document.getElementById('k-filter-lok').value.toLowerCase();
+        const f = allData.filter(r => (t==="" || r.disaster_type===t) && (r.city_district||"").toLowerCase().includes(l));
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageK-1)*rowsPerPage, pageK*rowsPerPage);
+        document.getElementById('table-kejadian').innerHTML = items.map(r => `<tr><td><b>${r.disaster_type}</b></td><td>${r.city_district}</td><td><span style="color:green; font-weight:bold;">Verified</span></td><td><button class="btn-mini" style="background:#3498db" onclick="viewKejadian(${r.id})">View</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Kosong</td></tr>';
+        createPagUI('pag-kejadian', pageK, total, 'chK');
+    }
+    window.chK = s => { pageK += s; filterKejadian(); };
+
+    function filterAksi() {
+        const l = document.getElementById('a-filter-lok').value.toLowerCase();
+        const f = allActions.filter(a => (a.city_district||"").toLowerCase().includes(l));
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageA-1)*rowsPerPage, pageA*rowsPerPage);
+        document.getElementById('table-aksi').innerHTML = items.map(a => `<tr><td><b>${a.city_district}</b></td><td>${a.kluster}</td><td>${a.jumlah_paket}</td><td>${a.penerima_manfaat}</td><td><button class="btn-mini" style="background:#e74c3c" onclick="pdfAksi(${a.id})">PDF</button></td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center">Kosong</td></tr>';
+        createPagUI('pag-aksi', pageA, total, 'chA');
+    }
+    window.chA = s => { pageA += s; filterAksi(); };
+
+    function filterKebutuhan() {
+        const t = document.getElementById('n-filter-tipe').value;
+        const l = document.getElementById('n-filter-lok').value.toLowerCase();
+        const i = document.getElementById('n-filter-item').value.toLowerCase();
+        const f = allData.filter(r => (t==="" || r.disaster_type===t) && (r.city_district||"").toLowerCase().includes(l) && JSON.stringify(r.kebutuhan||"").toLowerCase().includes(i));
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageN-1)*rowsPerPage, pageN*rowsPerPage);
+        document.getElementById('table-kebutuhan').innerHTML = items.map(r => `<tr><td><b>${r.disaster_type}</b></td><td>${r.city_district}</td><td><small>${r.kebutuhan?.logistik || 'Pangan'}</small></td><td><button class="btn-mini" style="background:#f39c12" onclick="viewKejadian(${r.id})">View</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Kosong</td></tr>';
+        createPagUI('pag-kebutuhan', pageN, total, 'chN');
+    }
+    window.chN = s => { pageN += s; filterKebutuhan(); };
+
+    // 5. MODAL & PDF
+    function viewKejadian(id) {
+        const r = allData.find(x => x.id == id);
+        document.getElementById('m-title').innerText = "Detail Kejadian";
+        document.getElementById('m-body').innerHTML = `
+            <img src="${r.photo || ''}" style="width:100%; border-radius:10px; margin-bottom:10px;">
+            <b>${r.disaster_type} - ${r.city_district}</b><br><small>${r.kecamatan || '-'}, Desa ${r.desa || '-'}</small><hr>
+            <p><b>Kondisi:</b> ${r.kondisi_mutakhir || r.description}</p>
+            <p><b>Dampak:</b> ${r.sebaran_dampak || '-'}</p>
+            <p><b>Kebutuhan:</b> Logistik (${r.kebutuhan?.logistik || '-'}), Medis (${r.kebutuhan?.medis || '-'})</p>
+        `;
+        document.getElementById('viewModal').style.display = 'block';
+    }
+
+    function pdfAksi(id) {
+        const a = allActions.find(x => x.id == id);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("LAPORAN RESPON NU PEDULI", 14, 15);
+        doc.autoTable({ startY: 25, head: [['Wilayah', 'Kluster', 'Kegiatan', 'Paket']], body: [[a.city_district, a.kluster, a.nama_kegiatan, a.jumlah_paket]] });
+        doc.save(`Respon_${a.city_district}.pdf`);
+    }
+
+    function closeModal() { document.getElementById('viewModal').style.display = 'none'; }
+    window.onload = loadData;
+</script>
+</body>
+</html>

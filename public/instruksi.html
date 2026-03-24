@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instruksi - NU Peduli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; --bg: #f4f7f6; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); padding-bottom: 80px; }
+        .container { padding: 15px; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .btn-blue { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+        .btn-gold { background: var(--nu-gold); color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; padding: 15px; }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; max-width: 400px; margin: auto; }
+        textarea { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-top: 5px; }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; padding: 10px 0; border-top: 1px solid #ddd; z-index: 2000; }
+        .nav-item { flex: 1; text-align: center; color: #94a3b8; text-decoration: none; font-size: 0.6rem; font-weight: 600; }
+        .nav-item.active { color: var(--nu-green); }
+        .nav-item i { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h3 style="color:var(--nu-gold);">Menunggu TTD Ketua</h3>
+    <div id="list-ttd"></div>
+    <hr>
+    <h3 style="color:var(--nu-green);">Perlu Draf SP</h3>
+    <div id="list-draf"></div>
+</div>
+
+<div id="spModal" class="modal">
+    <div class="modal-content">
+        <h3 id="m-title">Konsep SP</h3>
+        <div id="m-body"></div>
+        <button onclick="this.parentElement.parentElement.style.display='none'" style="width:100%; margin-top:10px;">Batal</button>
+    </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="admin_dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i>Dash</a>
+    <a href="admin_verify.html" class="nav-item active"><i class="fas fa-inbox"></i>Verify</a>
+    <a href="admin_assess.html" class="nav-item"><i class="fas fa-file-invoice"></i>Assess</a>
+    <a href="admin_instruksi.html" class="nav-item"><i class="fas fa-signature"></i>Instruksi</a>
+    <a href="admin_action.html" class="nav-item"><i class="fas fa-hand-holding-heart"></i>Action</a>
+</nav>
+
+<script>
+const API_URL = window.location.origin; 
+    let activeId = null;
+
+    async function load() {
+        const res = await fetch(`${API_URL}/api/reports/admin`);
+        const data = await res.json();
+        const draf = data.filter(r => r.is_approved && r.status_perintah === 'None');
+        const ttd = data.filter(r => r.status_perintah === 'Drafted');
+
+        document.getElementById('list-draf').innerHTML = draf.map(r => `<div class="card"><span>${r.disaster_type}</span><button class="btn-blue" onclick="openModal(${r.id}, 'draft')">Draft</button></div>`).join('');
+        document.getElementById('list-ttd').innerHTML = ttd.map(r => `<div class="card"><span>${r.disaster_type}</span><button class="btn-gold" onclick="openModal(${r.id}, 'sign', '${r.surat_perintah_data.petugas_ditunjuk}')">Review</button></div>`).join('');
+    }
+
+    function openModal(id, mode, petugas = '') {
+        activeId = id;
+        document.getElementById('spModal').style.display='block';
+        if(mode === 'draft') {
+            document.getElementById('m-body').innerHTML = `<label>Petugas</label><textarea id="m-petugas"></textarea><button onclick="submitDraft()">Kirim</button>`;
+        } else {
+            document.getElementById('m-body').innerHTML = `<p>Petugas: ${petugas}</p><button onclick="submitSign()">Tanda Tangan</button>`;
+        }
+    }
+
+    async function submitDraft() {
+        const p = { id: activeId, petugas_ditunjuk: document.getElementById('m-petugas').value, instruksi_khusus: 'Segera respon' };
+        await fetch(`${API_URL}/api/reports/draft-sp`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(p) });
+        location.reload();
+    }
+
+    async function submitSign() {
+        const n = prompt("Nama Ketua:");
+        await fetch(`${API_URL}/api/reports/approve-sp`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: activeId, chairman_name: n}) });
+        location.reload();
+    }
+    window.onload = load;
+</script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard Command Center - NU Peduli</title>
+    
+    <!-- Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; --bg: #f4f7f6; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background-color: var(--bg); padding-bottom: 80px; font-size: 0.8rem; }
+        
+        header { background: var(--nu-green); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--nu-gold); position: sticky; top: 0; z-index: 2000; }
+        header h1 { font-size: 0.85rem; margin: 0; font-weight: 700; }
+
+        .hero-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 10px; background: white; border-bottom: 1px solid #ddd; }
+        .hero-lifecycle { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px; background: #e8f5e9; border-bottom: 1px solid #ddd; }
+        .sum-card { text-align: center; padding: 8px; border-radius: 10px; background: #f8fafc; border: 1px solid #eee; }
+        .sum-value { display: block; font-size: 0.85rem; font-weight: 700; color: var(--nu-green); }
+        .sum-label { font-size: 0.45rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
+
+        .container { padding: 12px; }
+        #map { height: 350px; width: 100%; border-radius: 15px; margin-bottom: 15px; border: 1px solid #ddd; z-index: 1; }
+
+        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h3 { font-size: 0.85rem; font-weight: 700; color: var(--nu-green); border-bottom: 2px solid var(--nu-gold); display: inline-block; padding-bottom: 3px; margin-bottom: 12px; }
+
+        .filter-group { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .filter-group input, .filter-group select { flex: 1; min-width: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.7rem; font-family: inherit; }
+
+        .table-res { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; min-width: 550px; }
+        th { background: #f8f9fa; padding: 10px 8px; text-align: left; color: #666; font-size: 0.65rem; border-bottom: 2px solid #eee; }
+        td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
+
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+        .btn-page { background: white; border: 1px solid #ddd; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-weight: bold; color: var(--nu-green); }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* Popup Stat Grid */
+        .popup-stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin: 10px 0; }
+        .popup-stat-box { text-align: center; padding: 5px; border-radius: 6px; font-size: 0.6rem; font-weight: bold; }
+        .box-red { background: #fee2e2; color: #991b1b; }
+        .box-yellow { background: #fef3c7; color: #92400e; }
+        .box-green { background: #dcfce7; color: #166534; }
+
+        .btn-mini { padding: 5px 10px; border-radius: 5px; border: none; color: white; cursor: pointer; font-size: 0.65rem; font-weight: bold; margin-right: 2px; }
+        .btn-view { background: #3498db; }
+        .btn-close-rep { background: #2c3e50; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 3000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; }
+
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; padding: 10px 0; border-top: 1px solid #ddd; z-index: 2000; }
+        .nav-item { flex: 1; text-align: center; color: #94a3b8; text-decoration: none; font-size: 0.55rem; font-weight: 600; }
+        .nav-item.active { color: var(--nu-green); font-weight: bold; }
+        .nav-item i { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+
+        .disaster-icon { background: white; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-align: center; line-height: 28px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 id="header-title">PUSDATIN NU PEDULI</h1>
+    <button onclick="logout()" style="background:none; border:1px solid white; color:white; font-size:0.6rem; padding:4px 10px; border-radius:6px;">Logout</button>
+</header>
+
+<div class="hero-summary">
+    <div class="sum-card"><i class="fas fa-users"></i><span class="sum-value" id="h-jiwa">0</span><span class="sum-label">Jiwa</span></div>
+    <div class="sum-card"><i class="fas fa-bullhorn"></i><span class="sum-value" id="h-bencana">0</span><span class="sum-label">Bencana</span></div>
+    <div class="sum-card"><i class="fas fa-box-open"></i><span class="sum-value" id="h-paket">0</span><span class="sum-label">Paket</span></div>
+    <div class="sum-card"><i class="fas fa-hands-helping"></i><span class="sum-value" id="h-manfaat">0</span><span class="sum-label">Manfaat</span></div>
+</div>
+
+<div class="hero-lifecycle">
+    <div class="sum-card"><span class="sum-value" id="s-pending">0</span><span class="sum-label">Pending</span></div>
+    <div class="sum-card"><span class="sum-value" id="s-assess">0</span><span class="sum-label">Assess</span></div>
+    <div class="sum-card"><span class="sum-value" id="s-sp">0</span><span class="sum-label">Instruksi</span></div>
+    <div class="sum-card"><span class="sum-value" id="s-aksi">0</span><span class="sum-label">Aksi</span></div>
+    <div class="sum-card"><span class="sum-value" id="s-closed">0</span><span class="sum-label">Selesai</span></div>
+</div>
+
+<div class="container">
+    <div id="map"></div>
+
+    <!-- 1. RANGKUMAN KEJADIAN -->
+    <div class="card">
+        <h3><i class="fas fa-exclamation-triangle"></i> Rangkuman Kejadian</h3>
+        <div class="filter-group">
+            <select id="k-tipe" onchange="resetPages(); filterKejadian();"><option value="">Semua Bencana</option><option>Banjir</option><option>Longsor</option><option>Gempa Bumi</option></select>
+            <input type="text" id="k-lok" placeholder="Cari Kabupaten/Kec..." onkeyup="resetPages(); filterKejadian();">
+        </div>
+        <div class="table-res">
+            <table>
+                <thead><tr><th>Tipe</th><th>Wilayah</th><th>Sumber</th><th>Aksi</th></tr></thead>
+                <tbody id="t-kejadian"></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="pag-kejadian"></div>
+    </div>
+
+    <!-- 2. RANGKUMAN RESPON -->
+    <div class="card">
+        <h3><i class="fas fa-hand-holding-heart"></i> Rangkuman Aksi NU</h3>
+        <div class="filter-group">
+            <input type="text" id="a-lok" placeholder="Cari Kabupaten..." onkeyup="resetPages(); filterAksi();">
+        </div>
+        <div class="table-res">
+            <table>
+                <thead><tr><th>Wilayah</th><th>Kluster</th><th>Paket</th><th>Jiwa</th><th>Aksi</th></tr></thead>
+                <tbody id="t-aksi"></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="pag-aksi"></div>
+    </div>
+
+    <!-- 3. RANGKUMAN KEBUTUHAN MENDESAK -->
+    <div class="card">
+        <h3><i class="fas fa-clipboard-list"></i> Kebutuhan Mendesak</h3>
+        <div class="filter-group">
+            <select id="n-tipe" onchange="resetPages(); filterKebutuhan();"><option value="">Semua Bencana</option><option>Banjir</option><option>Longsor</option></select>
+            <input type="text" id="n-lok" placeholder="Cari Wilayah..." onkeyup="resetPages(); filterKebutuhan();">
+            <input type="text" id="n-item" placeholder="Cari Item (Sembako/Alat)..." onkeyup="resetPages(); filterKebutuhan();" style="width:100%; margin-top:5px;">
+        </div>
+        <div class="table-res">
+            <table>
+                <thead><tr><th>Bencana</th><th>Wilayah</th><th>Kebutuhan</th><th>Aksi</th></tr></thead>
+                <tbody id="t-kebutuhan"></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="pag-kebutuhan"></div>
+    </div>
+</div>
+
+<div id="vModal" class="modal">
+    <div class="modal-content">
+        <span onclick="this.parentElement.parentElement.style.display='none'" style="float:right; cursor:pointer; font-size:1.5rem;">&times;</span>
+        <h3 id="m-title" style="color:var(--nu-green); margin:0;">Detail Informasi</h3><hr>
+        <div id="m-body" style="font-size:0.75rem; line-height:1.6;"></div>
+    </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="admin_dashboard.html" class="nav-item active"><i class="fas fa-chart-line"></i>Dash</a>
+    <a href="admin_verify.html" class="nav-item"><i class="fas fa-inbox"></i>Verify</a>
+    <a href="admin_assess.html" class="nav-item"><i class="fas fa-file-invoice"></i>Assess</a>
+    <a href="admin_instruksi.html" class="nav-item"><i class="fas fa-signature"></i>Instruksi</a>
+    <a href="admin_action.html" class="nav-item"><i class="fas fa-hand-holding-heart"></i>Action</a>
+</nav>
+
+<script>
+    const API_URL = window.location.origin; 
+    let allData = [], allActions = [];
+    const rowsPerPage = 10;
+    let pageK = 1, pageA = 1, pageN = 1;
+
+    const map = L.map('map', { zoomControl: true }).setView([-7.15, 110.14], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+
+    function getIcon(type) {
+        const iconMap = { 'Banjir': 'fa-water', 'Longsor': 'fa-mountain', 'Gempa Bumi': 'fa-house-damage', 'Cuaca Ekstrem': 'fa-wind' };
+        return L.divIcon({
+            html: `<div class="disaster-icon" style="color:#006432"><i class="fas ${iconMap[type] || 'fa-exclamation-triangle'}"></i></div>`,
+            className: 'custom-icon', iconSize: [30, 30]
+        });
+    }
+
+    async function loadData() {
+        const userData = JSON.parse(localStorage.getItem('userData'));
+        if(!userData) { window.location.href = 'login.html'; return; }
+        
+        const { name, region, role } = userData;
+        document.getElementById('header-title').innerText = (role === 'SUPER_ADMIN') ? "PWNU JATENG" : "PCNU " + region;
+
+        try {
+            const resR = await fetch(`${API_URL}/api/reports/admin?region=${region}&role=${role}`);
+            allData = await resR.json();
+            const resA = await fetch(`${API_URL}/api/actions/all?region=${region}&role=${role}`);
+            allActions = await resA.json();
+
+            renderHero();
+            renderStatusStats();
+            filterKejadian();
+            filterAksi();
+            filterKebutuhan();
+            renderMarkers();
+        } catch (e) { console.error("Server Down"); }
+    }
+
+    function renderHero() {
+        let jiwa = 0, pkt = 0, mnf = 0;
+        allData.forEach(r => jiwa += parseInt(r.dampak_manusia?.terdampak || 0));
+        allActions.forEach(a => { pkt += parseInt(a.jumlah_paket || 0); mnf += parseInt(a.penerima_manfaat || 0); });
+        document.getElementById('h-jiwa').innerText = jiwa.toLocaleString('id-ID');
+        document.getElementById('h-bencana').innerText = allData.length;
+        document.getElementById('h-paket').innerText = pkt.toLocaleString('id-ID');
+        document.getElementById('h-manfaat').innerText = mnf.toLocaleString('id-ID');
+    }
+
+    function renderStatusStats() {
+        document.getElementById('s-pending').innerText = allData.filter(r => r.status_bencana === 'Pending').length;
+        document.getElementById('s-assess').innerText = allData.filter(r => r.status_bencana === 'Verified').length;
+        document.getElementById('s-sp').innerText = allData.filter(r => r.status_perintah === 'Drafted').length;
+        document.getElementById('s-aksi').innerText = allData.filter(r => r.status_bencana === 'Penanganan').length;
+        document.getElementById('s-closed').innerText = allData.filter(r => r.status_bencana === 'Closed').length;
+    }
+
+    function renderMarkers() {
+        map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
+        allData.filter(r => r.is_approved).forEach(r => {
+            const marker = L.marker([r.latitude, r.longitude], {icon: getIcon(r.disaster_type)}).addTo(map);
+            marker.bindPopup(`
+                <div style="width:250px; font-family:'Poppins';">
+                    <div class="popup-header"><h4 style="margin:0; color:var(--nu-green);">${r.disaster_type}</h4><small>📍 ${r.city_district}, Kec. ${r.kecamatan || '-'}</small></div>
+                    <div class="popup-stat-grid">
+                        <div class="popup-stat-box box-red">Meninggal<br>${r.dampak_manusia?.meninggal || 0}</div>
+                        <div class="popup-stat-box box-yellow">Hilang<br>${r.dampak_manusia?.hilang || 0}</div>
+                        <div class="popup-stat-box box-green">Terdampak<br>${r.dampak_manusia?.terdampak || 0}</div>
+                    </div>
+                    <p style="font-size:0.7rem; color:#444;"><b>Luasan Dampak:</b><br>${r.sebaran_dampak || r.kondisi_mutakhir || '-'}</p>
+                    <p style="font-size:0.7rem; color:#e67e22; background:#fffcf0; padding:5px; border-radius:5px;"><b>🚨 Kebutuhan:</b> ${r.kebutuhan?.logistik || 'Pangan'}</p>
+                    <button class="btn-mini" style="background:var(--nu-green); width:100%; justify-content:center; margin-top:5px;" onclick="viewKejadian(${r.id})">VIEW DETAIL</button>
+                </div>
+            `);
+        });
+    }
+
+    function renderPagUI(id, page, total, fn) {
+        document.getElementById(id).innerHTML = `
+            <button class="btn-page" ${page===1?'disabled':''} onclick="${fn}(-1)"><i class="fas fa-chevron-left"></i></button>
+            <span style="font-size:0.7rem; font-weight:bold;">Hal ${page} / ${total||1}</span>
+            <button class="btn-page" ${page===total||total===0?'disabled':''} onclick="${fn}(1)"><i class="fas fa-chevron-right"></i></button>
+        `;
+    }
+
+    function resetPages() { pageK = 1; pageA = 1; pageN = 1; }
+
+    function filterKejadian() {
+        const t = document.getElementById('k-tipe').value;
+        const l = document.getElementById('k-lok').value.toLowerCase();
+        const f = allData.filter(r => (t==="" || r.disaster_type===t) && (r.city_district||"").toLowerCase().includes(l));
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageK-1)*rowsPerPage, pageK*rowsPerPage);
+
+        document.getElementById('t-kejadian').innerHTML = items.map(r => `
+            <tr>
+                <td><b>${r.disaster_type}</b></td>
+                <td>${r.city_district}</td>
+                <td>${r.is_admin_report?'Adm':'Wrg'}</td>
+                <td>
+                    <button class="btn-mini btn-view" onclick="viewKejadian(${r.id})"><i class="fas fa-eye"></i></button>
+                    ${r.status_bencana === 'Penanganan' ? `<button class="btn-mini btn-close-rep" onclick="tutupLaporan(${r.id})"><i class="fas fa-check"></i></button>` : ''}
+                </td>
+            </tr>
+        `).join('') || '<tr><td colspan="4" style="text-align:center">Kosong</td></tr>';
+        renderPagUI('pag-kejadian', pageK, total, 'chK');
+    }
+    window.chK = s => { pageK += s; filterKejadian(); };
+
+    function filterAksi() {
+        const l = document.getElementById('a-lok').value.toLowerCase();
+        const f = allActions.filter(a => (a.city_district||"").toLowerCase().includes(l));
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageA-1)*rowsPerPage, pageA*rowsPerPage);
+
+        document.getElementById('t-aksi').innerHTML = items.map(a => `
+            <tr>
+                <td><b>${a.city_district}</b></td>
+                <td>${a.kluster}</td>
+                <td>${a.jumlah_paket}</td>
+                <td>${a.penerima_manfaat}</td>
+                <td><button class="btn-mini btn-view" onclick="alert('Cetak PDF Respon ID: '+${a.id})"><i class="fas fa-file-pdf"></i></button></td>
+            </tr>
+        `).join('') || '<tr><td colspan="5" style="text-align:center">Kosong</td></tr>';
+        renderPagUI('pag-aksi', pageA, total, 'chA');
+    }
+    window.chA = s => { pageA += s; filterAksi(); };
+
+    function filterKebutuhan() {
+        const t = document.getElementById('n-tipe').value;
+        const l = document.getElementById('n-lok').value.toLowerCase();
+        const i = document.getElementById('n-item').value.toLowerCase();
+        const f = allData.filter(r => (t==="" || r.disaster_type===t) && (r.city_district||"").toLowerCase().includes(l) && JSON.stringify(r.kebutuhan||"").toLowerCase().includes(i) && r.is_approved);
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageN-1)*rowsPerPage, pageN*rowsPerPage);
+
+        document.getElementById('t-kebutuhan').innerHTML = items.map(r => `
+            <tr>
+                <td><b>${r.disaster_type}</b></td>
+                <td>${r.city_district}</td>
+                <td><small>${r.kebutuhan?.logistik || '-'} ${r.kebutuhan?.peralatan || ''}</small></td>
+                <td><button class="btn-mini btn-view" onclick="viewKejadian(${r.id})"><i class="fas fa-eye"></i></button></td>
+            </tr>
+        `).join('') || '<tr><td colspan="4" style="text-align:center">Kosong</td></tr>';
+        renderPagUI('pag-kebutuhan', pageN, total, 'chN');
+    }
+    window.chN = s => { pageN += s; filterKebutuhan(); };
+
+    function viewKejadian(id) {
+        const r = allData.find(x => x.id == id);
+        document.getElementById('m-title').innerText = "Detail Kejadian Bencana";
+        document.getElementById('m-body').innerHTML = `
+            <img src="${r.photo || ''}" style="width:100%; border-radius:10px; margin-bottom:10px; border:1px solid #ddd;">
+            <p><b>Jenis:</b> ${r.disaster_type}</p>
+            <p><b>Wilayah:</b> ${r.city_district}, Kec. ${r.kecamatan || '-'}</p>
+            <p><b>Kondisi:</b> ${r.kondisi_mutakhir || r.description || '-'}</p>
+            <p><b>Jiwa Terdampak:</b> ${r.dampak_manusia?.terdampak || 0}</p>
+        `;
+        document.getElementById('vModal').style.display='block';
+    }
+
+    async function tutupLaporan(id) {
+        if(!confirm("Bencana selesai ditangani? Laporan masuk arsip.")) return;
+        await fetch(`${API_URL}/api/reports/close`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
+        loadData();
+    }
+
+    function logout() { localStorage.clear(); window.location.href='login.html'; }
+    window.onload = loadData;
+</script>
+</body>
+</html>

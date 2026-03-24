@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Respon - NU Peduli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; --bg: #f4f7f6; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background-color: var(--bg); padding-bottom: 100px; }
+        
+        header { background: var(--nu-green); color: white; padding: 15px; border-bottom: 3px solid var(--nu-gold); text-align: center; position: sticky; top: 0; z-index: 1000; }
+        .container { padding: 15px; max-width: 600px; margin: auto; }
+        
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { font-size: 1.1rem; margin-top: 0; color: #333; }
+        
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-top: 15px; color: #444; }
+        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; margin-top: 5px; box-sizing: border-box; font-family: inherit; font-size: 0.85rem; }
+        
+        /* Cluster Styling */
+        .cluster-box { border: 1px solid #eee; padding: 15px; border-radius: 12px; margin-bottom: 20px; background: #fffdf5; border-left: 5px solid var(--nu-gold); }
+        .cluster-title { font-size: 0.9rem; font-weight: 700; color: var(--nu-green); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        
+        .btn-submit-all { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 550px; padding: 16px; background: var(--nu-gold); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1500; transition: 0.3s; }
+        .btn-submit-all:active { transform: translateX(-50%) scale(0.98); background: #b08d4a; }
+
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; padding: 10px 0; border-top: 1px solid #ddd; z-index: 2000; }
+        .nav-item { flex: 1; text-align: center; color: #94a3b8; text-decoration: none; font-size: 0.6rem; font-weight: 600; }
+        .nav-item.active { color: var(--nu-green); }
+        .nav-item i { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="margin:0; font-size:1.1rem;">INPUT RESPON LAPANGAN</h1>
+</header>
+
+<div class="container">
+    <div class="card">
+        <h2>Pilih Bencana (Sudah ber-SP)</h2>
+        <select id="res-link-id">
+            <option value="">Memuat data bencana...</option>
+        </select>
+    </div>
+
+    <!-- KLUSTER LOGISTIK -->
+    <div class="cluster-box">
+        <div class="cluster-title"><i class="fas fa-box"></i> Logistik</div>
+        <input type="text" id="log-nama" placeholder="Nama Kegiatan">
+        <input type="text" id="log-paket" placeholder="Jumlah Paket">
+        <input type="text" id="log-manfaat" placeholder="Penerima Manfaat">
+    </div>
+
+    <!-- KLUSTER MEDIS -->
+    <div class="cluster-box">
+        <div class="cluster-title"><i class="fas fa-user-md"></i> Medis</div>
+        <input type="text" id="med-nama" placeholder="Nama Kegiatan">
+        <input type="text" id="med-manfaat" placeholder="Penerima Manfaat">
+    </div>
+
+    <!-- KLUSTER SAR -->
+    <div class="cluster-box">
+        <div class="cluster-title"><i class="fas fa-search-location"></i> SAR</div>
+        <input type="text" id="sar-nama" placeholder="Nama Kegiatan">
+        <input type="text" id="sar-manfaat" placeholder="Penerima Manfaat">
+    </div>
+
+    <!-- KLUSTER PSIKOSOSIAL -->
+    <div class="cluster-box">
+        <div class="cluster-title"><i class="fas fa-smile"></i> Psikososial</div>
+        <input type="text" id="psi-nama" placeholder="Nama Kegiatan">
+        <input type="text" id="psi-paket" placeholder="Jumlah Paket">
+        <input type="text" id="psi-manfaat" placeholder="Penerima Manfaat">
+    </div>
+
+    <!-- KLUSTER REKONSTRUKSI -->
+    <div class="cluster-box">
+        <div class="cluster-title"><i class="fas fa-tools"></i> Rekonstruksi</div>
+        <input type="text" id="rek-nama" placeholder="Nama Kegiatan">
+        <input type="text" id="rek-paket" placeholder="Jumlah Paket">
+        <input type="text" id="rek-manfaat" placeholder="Penerima Manfaat">
+    </div>
+
+    <!-- KLUSTER PENDIDIKAN -->
+    <div class="cluster-box">
+        <div class="cluster-title"><i class="fas fa-graduation-cap"></i> Pendidikan</div>
+        <input type="text" id="edu-nama" placeholder="Nama Kegiatan">
+        <input type="text" id="edu-paket" placeholder="Jumlah Paket">
+        <input type="text" id="edu-manfaat" placeholder="Penerima Manfaat">
+    </div>
+
+    <!-- KLUSTER PENGUNGSIAN & PERLINDUNGAN -->
+    <div class="cluster-box">
+        <div class="cluster-title"><i class="fas fa-campground"></i> Pengungsian & Perlindungan</div>
+        <input type="text" id="evac-nama" placeholder="Nama Kegiatan">
+        <input type="text" id="evac-paket" placeholder="Jumlah Paket">
+        <input type="text" id="evac-manfaat" placeholder="Penerima Manfaat">
+    </div>
+
+    <button class="btn-submit-all" onclick="submitSemuaRespon()">
+        SIMPAN SEMUA RESPON
+    </button>
+</div>
+
+<!-- Navigasi Bawah -->
+<nav class="bottom-nav">
+    <a href="admin.html" class="nav-item"><i class="fas fa-chart-line"></i>Dash</a>
+    <a href="admin_verify.html" class="nav-item"><i class="fas fa-inbox"></i>Verify</a>
+    <a href="admin_assess.html" class="nav-item"><i class="fas fa-file-invoice"></i>Assess</a>
+    <a href="admin_instruksi.html" class="nav-item"><i class="fas fa-signature"></i>Instruksi</a>
+    <a href="admin_action.html" class="nav-item active"><i class="fas fa-hand-holding-heart"></i>Action</a>
+</nav>
+
+<script>
+const API_URL = window.location.origin; 
+
+    // 1. Ambil Data Bencana yang sudah ada Surat Perintah (Approved)
+    async function loadBencanaBerSP() {
+        try {
+            const userData = JSON.parse(localStorage.getItem('userData'));
+            const { region, role } = userData;
+
+            const res = await fetch(`${API_URL}/api/reports/admin?region=${region}&role=${role}`);
+            const data = await res.json();
+            
+            const approved = data.filter(r => r.status_perintah === 'Approved');
+            const select = document.getElementById('res-link-id');
+            
+            if (approved.length > 0) {
+                select.innerHTML = '<option value="">-- Pilih Kejadian --</option>' + 
+                    approved.map(r => `<option value="${r.id}">${r.disaster_type} - ${r.city_district}</option>`).join('');
+            } else {
+                select.innerHTML = '<option value="">Belum ada bencana ber-SP</option>';
+            }
+        } catch (e) {
+            console.error("Gagal memuat dropdown");
+        }
+    }
+
+    // 2. Logika Simpan Global (Looping melalui semua kluster)
+    async function submitSemuaRespon() {
+        const reportId = document.getElementById('res-link-id').value;
+        if (!reportId) return alert("Pilih kejadian bencana terlebih dahulu!");
+
+        // Konfigurasi Kluster (Sesuai Struktur Form)
+        const clusters = [
+            { id: 'log', name: 'Logistik', hasPaket: true },
+            { id: 'med', name: 'Medis', hasPaket: false },
+            { id: 'sar', name: 'SAR', hasPaket: false },
+            { id: 'psi', name: 'Psikososial', hasPaket: true },
+            { id: 'rek', name: 'Rekonstruksi', hasPaket: true },
+            { id: 'edu', name: 'Pendidikan', hasPaket: true },
+            { id: 'evac', name: 'Pengungsian dan Perlindungan', hasPaket: true }
+        ];
+
+        let hasFilledAny = false;
+        let processedCount = 0;
+
+        for (const item of clusters) {
+            const kegiatan = document.getElementById(`${item.id}-nama`).value;
+            const manfaat = document.getElementById(`${item.id}-manfaat`).value;
+            const paket = item.hasPaket ? document.getElementById(`${item.id}-paket`).value : "-";
+
+            // Jika minimal 'Nama Kegiatan' diisi, maka simpan kluster tersebut
+            if (kegiatan.trim() !== "") {
+                hasFilledAny = true;
+                const payload = {
+                    report_id: parseInt(reportId),
+                    kluster: item.name,
+                    kegiatan: kegiatan,
+                    paket: paket,
+                    penerima: manfaat,
+                    photo: "" // Bisa ditambahkan fitur upload foto per kluster nanti
+                };
+
+                try {
+                    const res = await fetch(`${API_URL}/api/actions/admin-create`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) processedCount++;
+                } catch (e) {
+                    console.error(`Gagal menyimpan kluster ${item.name}`);
+                }
+            }
+        }
+
+        if (!hasFilledAny) {
+            return alert("Minimal isi satu kluster kegiatan!");
+        }
+
+        alert(`Berhasil menyimpan ${processedCount} Kluster Respon.`);
+        location.reload(); // Refresh halaman setelah selesai
+    }
+
+    window.onload = () => {
+        if (!localStorage.getItem('isLoggedIn')) window.location.href = 'login.html';
+        loadBencanaBerSP();
+    };
+</script>
+</body>
+</html>

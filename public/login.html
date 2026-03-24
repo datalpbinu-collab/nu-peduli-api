@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Staff - NU Peduli</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; }
+        body { font-family: 'Poppins', sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; width: 100%; max-width: 350px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-top: 8px solid var(--nu-green); text-align: center; }
+        .header img { height: 60px; margin-bottom: 10px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-family: inherit; }
+        .btn-login { width: 100%; padding: 12px; background: var(--nu-green); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; margin-top: 10px; }
+        .footer-text { margin-top: 20px; font-size: 0.8rem; color: #666; }
+        .footer-text a { color: var(--nu-green); text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="header">
+        <img src="https://upload.wikimedia.org/wikipedia/id/thumb/a/a2/Logo_Nahdlatul_Ulama.svg/1200px-Logo_Nahdlatul_Ulama.svg.png">
+        <h2 style="color:var(--nu-green); margin:0;">Login Pusdatin</h2>
+    </div>
+
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit" class="btn-login" id="btnLogin">MASUK SEKARANG</button>
+    </form>
+
+    <div class="footer-text">
+        Belum punya akun? <a href="register.html">Daftar Akun Cabang</a>
+    </div>
+</div>
+
+<script>
+    const API_URL = window.location.origin; 
+
+    document.getElementById('loginForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnLogin');
+        btn.innerText = "Memverifikasi...";
+        btn.disabled = true;
+
+        const payload = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // SIMPAN DATA LOGIN & ROLE KE LOCALSTORAGE
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('userData', JSON.stringify({
+                    name: result.user.name,
+                    region: result.user.region,
+                    role: result.user.role // SUPER_ADMIN atau PCNU
+                }));
+                 alert("Login Berhasil sebagai " + result.user.role);
+                window.location.href = "admin.html";
+            } else {
+                alert("Username atau Password Salah!");
+                btn.innerText = "MASUK SEKARANG";
+                btn.disabled = false;
+            }
+        } catch (error) {
+            alert("Gagal terhubung ke server.");
+            btn.disabled = false;
+        }
+    };
+</script>
+</body>
+</html>

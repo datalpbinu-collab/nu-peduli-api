@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lapor Bencana - NU Peduli Jateng</title>
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; --bg: #f2f5f3; }
+        
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--bg); 
+            margin: 0; padding: 15px;
+            display: flex; justify-content: center;
+        }
+
+        .container { width: 100%; max-width: 500px; }
+
+        /* Card Style */
+        .card {
+            background: white; border-radius: 20px; padding: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            border-top: 6px solid var(--nu-green);
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .header img { height: 50px; margin-bottom: 10px; }
+        .header h2 { margin: 0; color: var(--nu-green); font-size: 1.2rem; }
+        .header p { margin: 5px 0 0; font-size: 0.8rem; color: #666; }
+
+        /* Form Group */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: #444; margin-bottom: 5px; }
+        input, select, textarea {
+            width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 12px;
+            font-family: inherit; font-size: 0.9rem; box-sizing: border-box; transition: 0.3s;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--nu-green); outline: none; }
+
+        /* Camera Section */
+        .photo-box {
+            background: #fafafa; border: 2px dashed #ddd; border-radius: 15px;
+            padding: 15px; text-align: center; margin-bottom: 15px; position: relative;
+        }
+        .photo-preview { 
+            width: 100%; border-radius: 10px; display: none; margin-top: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn-camera {
+            background: var(--nu-gold); color: white; border: none; padding: 12px 20px;
+            border-radius: 30px; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+
+        /* GPS Status Bar */
+        .gps-bar {
+            background: #fff; border: 1px solid #eee; padding: 10px;
+            border-radius: 10px; display: flex; align-items: center; gap: 10px;
+            margin-bottom: 20px; font-size: 0.75rem;
+        }
+        .dot { height: 10px; width: 10px; border-radius: 50%; background: #ccc; }
+        .dot.active { background: #2ecc71; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%; padding: 16px; background: var(--nu-green); color: white;
+            border: none; border-radius: 15px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: 0.3s;
+        }
+        .btn-submit:disabled { background: #ccc; }
+
+        #canvas-hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="header">
+            <img src="https://upload.wikimedia.org/wikipedia/id/thumb/a/a2/Logo_Nahdlatul_Ulama.svg/1200px-Logo_Nahdlatul_Ulama.svg.png">
+            <h2>NU PEDULI JATENG</h2>
+            <p>Form Pelaporan Situasi Darurat</p>
+        </div>
+
+        <form id="reportForm">
+            <div class="form-group">
+                <label>Nama Petugas</label>
+                <input type="text" id="reporter_name" placeholder="Nama Lengkap" required>
+            </div>
+
+            <div class="form-group">
+                <label>Nomor WhatsApp</label>
+                <input type="tel" id="whatsapp_number" placeholder="08xxxxxxxx" required>
+            </div>
+
+            <div class="form-group">
+                <label>Jenis Bencana</label>
+                <select id="disaster_type" required>
+                    <option value="">-- Pilih Bencana --</option>
+                    <option value="Banjir">Banjir</option>
+                    <option value="Tanah Longsor">Tanah Longsor</option>
+                    <option value="Angin Puting Beliung">Puting Beliung</option>
+                    <option value="Kebakaran">Kebakaran</option>
+                    <option value="Gempa Bumi">Gempa Bumi</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Keterangan Kejadian</label>
+                <textarea id="description" rows="3" placeholder="Gambarkan situasi terkini..." required></textarea>
+            </div>
+
+            <!-- Bagian Kamera -->
+            <label>Foto Bukti Kejadian</label>
+            <div class="photo-box">
+                <input type="file" id="photo_input" accept="image/*" capture="environment" style="display:none">
+                <button type="button" class="btn-camera" onclick="document.getElementById('photo_input').click()">
+                    <i class="fas fa-camera"></i> Ambil Foto Kamera
+                </button>
+                <img id="preview_img" class="photo-preview">
+                <canvas id="canvas-hidden"></canvas>
+            </div>
+
+            <!-- GPS Info -->
+            <div class="gps-bar">
+                <div id="gps-dot" class="dot"></div>
+                <span id="gps-text">Mencari Sinyal GPS...</span>
+                <input type="hidden" id="lat">
+                <input type="hidden" id="lng">
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit" disabled>Tunggu Sinyal GPS...</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const photoInput = document.getElementById('photo_input');
+    const previewImg = document.getElementById('preview_img');
+    const canvas = document.getElementById('canvas-hidden');
+    const submitBtn = document.getElementById('submitBtn');
+    let finalPhotoBase64 = "";
+
+    // 1. Ambil GPS Otomatis
+    function startGPS() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                document.getElementById('lat').value = pos.coords.latitude;
+                document.getElementById('lng').value = pos.coords.longitude;
+                
+                document.getElementById('gps-dot').classList.add('active');
+                document.getElementById('gps-text').innerText = "GPS Terkunci (Sinyal Akurat)";
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Kirim Laporan";
+            }, (err) => {
+                document.getElementById('gps-text').innerText = "Gagal Akses GPS. Aktifkan Lokasi!";
+            }, { enableHighAccuracy: true });
+        }
+    }
+
+    // 2. Olah Foto & Timestamp
+    photoInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const ctx = canvas.getContext('2d');
+                
+                // Set ukuran kompresi (lebar 1024px)
+                const scale = 1024 / img.width;
+                canvas.width = 1024;
+                canvas.height = img.height * scale;
+
+                // Gambar foto asli ke canvas
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // Tambahkan Watermark Timestamp
+                const now = new Date();
+                const timestamp = `NU PEDULI | ${now.toLocaleDateString('id-ID')} ${now.toLocaleTimeString('id-ID')} | ${document.getElementById('lat').value}, ${document.getElementById('lng').value}`;
+                
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.fillRect(0, canvas.height - 40, canvas.width, 40);
+                
+                ctx.fillStyle = "white";
+                ctx.font = "bold 20px Poppins, sans-serif";
+                ctx.fillText(timestamp, 20, canvas.height - 12);
+
+                // Export ke Base64 (0.8 kompresi)
+                finalPhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                previewImg.src = finalPhotoBase64;
+                previewImg.style.display = 'block';
+            };
+        };
+    };
+
+    // 3. Submit Data
+    document.getElementById('reportForm').onsubmit = async (e) => {
+        e.preventDefault();
+        if (!finalPhotoBase64) return alert("Harap ambil foto kejadian!");
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mengirim...';
+
+        const payload = {
+            reporter_name: document.getElementById('reporter_name').value,
+            whatsapp_number: document.getElementById('whatsapp_number').value,
+            disaster_type: document.getElementById('disaster_type').value,
+            description: document.getElementById('description').value,
+            latitude: document.getElementById('lat').value,
+            longitude: document.getElementById('lng').value,
+            photo: finalPhotoBase64
+        };
+
+        try {
+            const res = await fetch('window.location.origin/api/report-form', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert("Laporan Berhasil Terkirim!");
+                location.reload();
+            }
+        } catch (err) {
+            alert("Gagal terhubung ke server!");
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Coba Kirim Lagi";
+        }
+    };
+
+    window.onload = startGPS;
+</script>
+
+</body>
+</html>

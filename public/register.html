@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Admin Cabang - NU Peduli</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f4f7f6; 
+            margin: 0; padding: 20px;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; box-sizing: border-box;
+        }
+
+        .register-card {
+            background: white; width: 100%; max-width: 450px;
+            padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-top: 8px solid var(--nu-green);
+        }
+
+        .header { text-align: center; margin-bottom: 20px; }
+        .header img { height: 50px; }
+        .header h2 { margin: 10px 0 5px; color: var(--nu-green); font-size: 1.2rem; }
+        .header p { font-size: 0.75rem; color: #777; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; color: #555; margin-bottom: 5px; }
+        
+        input, select {
+            width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px;
+            box-sizing: border-box; font-family: inherit; font-size: 0.9rem; background: #fafafa;
+        }
+        input:focus, select:focus { border-color: var(--nu-green); outline: none; background: #fff; }
+
+        .btn-register {
+            width: 100%; padding: 15px; background: var(--nu-green); color: white;
+            border: none; border-radius: 10px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-register:hover { background: #004d26; }
+
+        .footer-link { text-align: center; margin-top: 20px; font-size: 0.85rem; }
+        .footer-link a { color: var(--nu-green); text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="register-card">
+    <div class="header">
+        <img src="https://upload.wikimedia.org/wikipedia/id/thumb/a/a2/Logo_Nahdlatul_Ulama.svg/1200px-Logo_Nahdlatul_Ulama.svg.png">
+        <h2>Registrasi Admin Cabang</h2>
+        <p>Pilih Pimpinan Cabang Anda untuk sinkronisasi data.</p>
+    </div>
+
+    <form id="registerForm">
+        <div class="form-group">
+            <label><i class="fas fa-user"></i> Nama Lengkap Petugas</label>
+            <input type="text" id="full_name" placeholder="Contoh: H. Ahmad Fauzi" required>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-university"></i> Asal Pimpinan Cabang (Kab/Kota)</label>
+            <select id="region" required>
+                <option value="">-- Pilih Cabang --</option>
+                <!-- Daftar 35 Kabupaten/Kota di Jawa Tengah -->
+                <option value="Banjarnegara">PCNU Banjarnegara</option>
+                <option value="Banyumas">PCNU Banyumas</option>
+                <option value="Batang">PCNU Batang</option>
+                <option value="Blora">PCNU Blora</option>
+                <option value="Boyolali">PCNU Boyolali</option>
+                <option value="Brebes">PCNU Brebes</option>
+                <option value="Cilacap">PCNU Cilacap</option>
+                <option value="Demak">PCNU Demak</option>
+                <option value="Grobogan">PCNU Grobogan</option>
+                <option value="Jepara">PCNU Jepara</option>
+                <option value="Karanganyar">PCNU Karanganyar</option>
+                <option value="Kebumen">PCNU Kebumen</option>
+                <option value="Kendal">PCNU Kendal</option>
+                <option value="Klaten">PCNU Klaten</option>
+                <option value="Kudus">PCNU Kudus</option>
+                <option value="Magelang">PCNU Kab. Magelang</option>
+                <option value="Pati">PCNU Pati</option>
+                <option value="Pekalongan">PCNU Kab. Pekalongan</option>
+                <option value="Pemalang">PCNU Pemalang</option>
+                <option value="Purbalingga">PCNU Purbalingga</option>
+                <option value="Purworejo">PCNU Purworejo</option>
+                <option value="Rembang">PCNU Rembang</option>
+                <option value="Semarang">PCNU Kab. Semarang</option>
+                <option value="Sragen">PCNU Sragen</option>
+                <option value="Sukoharjo">PCNU Sukoharjo</option>
+                <option value="Tegal">PCNU Kab. Tegal</option>
+                <option value="Temanggung">PCNU Temanggung</option>
+                <option value="Wonogiri">PCNU Wonogiri</option>
+                <option value="Wonosobo">PCNU Wonosobo</option>
+                <option value="Magelang Kota">PCNU Kota Magelang</option>
+                <option value="Pekalongan Kota">PCNU Kota Pekalongan</option>
+                <option value="Salatiga">PCNU Kota Salatiga</option>
+                <option value="Semarang Kota">PCNU Kota Semarang</option>
+                <option value="Surakarta">PCNU Kota Surakarta (Solo)</option>
+                <option value="Tegal Kota">PCNU Kota Tegal</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-id-badge"></i> Username Login</label>
+            <input type="text" id="username" placeholder="Buat username" required>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <input type="password" id="password" placeholder="Buat password" required>
+        </div>
+
+        <button type="submit" class="btn-register" id="btnSubmit">DAFTAR SEKARANG</button>
+    </form>
+
+    <div class="footer-link">
+        Sudah punya akun? <a href="login.html">Login Staff</a>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('registerForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = "Mendaftarkan...";
+
+        const payload = {
+            full_name: document.getElementById('full_name').value,
+            region: document.getElementById('region').value, // Mengambil nilai dari dropdown
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+        };
+
+        try {
+                const response = await fetch(`window.location.origin/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                alert("Registrasi Berhasil!\nWilayah Anda terdaftar sebagai Admin " + payload.region);
+                window.location.href = "login.html";
+            } else {
+                alert("Gagal Daftar: Username mungkin sudah dipakai.");
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = "DAFTAR SEKARANG";
+            }
+        } catch (error) {
+            alert("Terjadi kesalahan koneksi.");
+            btnSubmit.disabled = false;
+        }
+    };
+</script>
+
+</body>
+</html>

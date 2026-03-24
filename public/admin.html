@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Command Center Pusdatin - NU Peduli Jateng</title>
+    
+    <!-- Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        :root { --nu-green: #006432; --nu-gold: #c5a059; --bg: #f4f7f6; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; background-color: var(--bg); padding-bottom: 80px; font-size: 0.85rem; }
+        
+        header { background: var(--nu-green); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--nu-gold); position: sticky; top: 0; z-index: 2000; }
+        header h1 { font-size: 0.9rem; margin: 0; font-weight: 700; }
+
+        /* HERO STATS */
+        .hero-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px; background: white; border-bottom: 1px solid #ddd; }
+        .sum-card { text-align: center; padding: 8px; border-radius: 10px; background: #f8fafc; border: 1px solid #eee; }
+        .sum-card i { font-size: 0.9rem; color: var(--nu-green); margin-bottom: 2px; }
+        .sum-value { display: block; font-size: 0.9rem; font-weight: 700; color: var(--nu-green); }
+        .sum-label { font-size: 0.5rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
+
+        .container { padding: 12px; }
+        #map { height: 350px; width: 100%; border-radius: 20px; margin-bottom: 20px; border: 3px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 1; }
+
+        /* DASHBOARD SECTION STYLE */
+        .card { background: white; border-radius: 16px; padding: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h3 { font-size: 0.9rem; font-weight: 700; color: var(--nu-green); border-bottom: 2px solid var(--nu-gold); display: flex; align-items: center; gap: 10px; padding-bottom: 5px; margin-bottom: 15px; }
+
+        /* FILTER & TABLES */
+        .filter-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filter-group select, .filter-group input { flex: 1; min-width: 120px; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.75rem; font-family: inherit; }
+        .table-res { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; min-width: 550px; }
+        th { background: #f8f9fa; padding: 10px 8px; text-align: left; border-bottom: 2px solid #eee; color: #666; }
+        td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
+
+        /* PAGINATION UI */
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 15px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+        .btn-page { background: white; border: 1px solid #ddd; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.7rem; font-weight: bold; color: var(--nu-green); }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* POPUP MAP STYLE */
+        .popup-header { border-bottom: 2px solid var(--nu-green); padding-bottom: 5px; margin-bottom: 8px; }
+        .popup-stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin: 10px 0; }
+        .popup-stat-box { text-align: center; padding: 5px; border-radius: 6px; font-size: 0.6rem; font-weight: bold; }
+        .box-red { background: #fee2e2; color: #991b1b; }
+        .box-yellow { background: #fef3c7; color: #92400e; }
+        .box-green { background: #dcfce7; color: #166534; }
+
+        .btn-mini { padding: 4px 8px; border-radius: 4px; border: none; color: white; cursor: pointer; font-size: 0.65rem; font-weight: bold; margin-right: 2px; display: inline-flex; align-items: center; gap: 3px; }
+        .btn-view { background: #3498db; }
+        .btn-pdf { background: #e74c3c; }
+        .btn-submit { width: 100%; padding: 15px; background: var(--nu-green); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; padding: 15px; overflow-y: auto; }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; position: relative; }
+
+        /* BOTTOM NAVIGATION */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; padding: 10px 0; border-top: 1px solid #ddd; z-index: 2000; }
+        .nav-item { flex: 1; text-align: center; color: #94a3b8; text-decoration: none; font-size: 0.55rem; font-weight: 600; cursor: pointer; outline: none; }
+        .nav-item.active { color: var(--nu-green); font-weight: bold; }
+        .nav-item i { font-size: 1.2rem; display: block; margin-bottom: 2px; }
+
+        .page { display: none; }
+        .page.active { display: block; }
+        .disaster-icon { background: white; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); text-align: center; line-height: 28px; font-size: 16px; }
+
+        /* FORM PROFESSIONALS */
+        .section-title { background: #e8f5e9; padding: 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; color: var(--nu-green); margin: 15px 0 8px 0; border-left: 4px solid var(--nu-gold); }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>PUSDATIN NU PEDULI JATENG</h1>
+    <button onclick="logout()" style="background:none; border:1px solid white; color:white; padding:4px 8px; border-radius:6px; font-size:0.65rem;">Logout</button>
+</header>
+
+<div class="hero-summary">
+    <div class="sum-card"><i class="fas fa-users"></i><span class="sum-value" id="h-jiwa">0</span><span class="sum-label">Jiwa</span></div>
+    <div class="sum-card"><i class="fas fa-bullhorn"></i><span class="sum-value" id="h-bencana">0</span><span class="sum-label">Bencana</span></div>
+    <div class="sum-card"><i class="fas fa-box-open"></i><span class="sum-value" id="h-paket">0</span><span class="sum-label">Paket</span></div>
+    <div class="sum-card"><i class="fas fa-hands-helping"></i><span class="sum-value" id="h-manfaat">0</span><span class="sum-label">Manfaat</span></div>
+</div>
+
+<div class="container">
+    
+    <div id="p-dash" class="page active">
+        <div id="map"></div>
+
+        <!-- 1. RANGKUMAN KEJADIAN -->
+        <div class="card">
+            <h3><i class="fas fa-exclamation-circle"></i> Rangkuman Kejadian</h3>
+            <div class="filter-group">
+                <select id="k-filter-tipe" onchange="resetPages(); filterKejadian()"><option value="">Semua Bencana</option><option>Banjir</option><option>Longsor</option><option>Gempa Bumi</option></select>
+                <input type="text" id="k-filter-lok" placeholder="Kabupaten..." onkeyup="resetPages(); filterKejadian()">
+            </div>
+            <div class="table-res">
+                <table>
+                    <thead><tr><th>Tipe</th><th>Lokasi</th><th>Oleh</th><th>Aksi</th></tr></thead>
+                    <tbody id="table-kejadian"></tbody>
+                </table>
+            </div>
+            <div class="pagination-container" id="pag-kejadian"></div>
+        </div>
+
+        <!-- 2. RANGKUMAN AKSI (RESPON) -->
+        <div class="card">
+            <h3><i class="fas fa-hand-holding-heart"></i> Rangkuman Aksi</h3>
+            <div class="filter-group">
+                <select id="a-filter-tipe" onchange="resetPages(); filterAksi()"><option value="">Semua Bencana</option><option>Banjir</option><option>Longsor</option></select>
+                <input type="text" id="a-filter-lok" placeholder="Kabupaten..." onkeyup="resetPages(); filterAksi()">
+            </div>
+            <div class="table-res">
+                <table>
+                    <thead><tr><th>Lokasi</th><th>Kluster</th><th>Paket</th><th>Manfaat</th><th>Aksi</th></tr></thead>
+                    <tbody id="table-aksi"></tbody>
+                </table>
+            </div>
+            <div class="pagination-container" id="pag-aksi"></div>
+        </div>
+
+        <!-- 3. RANGKUMAN KEBUTUHAN -->
+        <div class="card">
+            <h3><i class="fas fa-clipboard-list"></i> Kebutuhan Mendesak</h3>
+            <div class="filter-group">
+                <select id="n-filter-tipe" onchange="resetPages(); filterKebutuhan()"><option value="">Semua Bencana</option><option>Banjir</option><option>Longsor</option></select>
+                <input type="text" id="n-filter-lok" placeholder="Kabupaten..." onkeyup="resetPages(); filterKebutuhan()">
+                <input type="text" id="n-filter-item" placeholder="Cari Item..." onkeyup="resetPages(); filterKebutuhan()" style="width:100%; margin-top:5px;">
+            </div>
+            <div class="table-res">
+                <table>
+                    <thead><tr><th>Bencana</th><th>Kabupaten</th><th>Item Mendesak</th><th>Aksi</th></tr></thead>
+                    <tbody id="table-kebutuhan"></tbody>
+                </table>
+            </div>
+            <div class="pagination-container" id="pag-kebutuhan"></div>
+        </div>
+    </div>
+
+    <!-- PAGES LAIN TETAP KONSISTEN -->
+    <div id="p-verify" class="page">
+        <h3>Inbox Laporan Warga</h3>
+        <div id="pending-container"></div>
+    </div>
+
+    <div id="p-report" class="page">
+        <div class="card">
+            <h2 style="text-align:center; color:var(--nu-green); margin:0;">FORM ASSESSMENT</h2>
+            <label>Pilih Bencana Terverifikasi</label>
+            <select id="assess-report-id" onchange="autoFillAssess(this.value)"><option value="">Pilih...</option></select>
+            <div class="section-title">LOKASI & DAMPAK</div>
+            <div class="grid-3">
+                <select id="in-kab" onchange="loadKecamatan(this.value)"><option value="">Kabupaten</option></select>
+                <select id="in-kec"></select>
+                <input type="text" id="in-desa" placeholder="Desa">
+            </div>
+            <div class="grid-2" style="margin-top:10px;"><input type="text" id="in-lat" placeholder="Lat"><input type="text" id="in-lng" placeholder="Lng"></div>
+            <input type="number" id="d-terdampak" placeholder="Jumlah Jiwa Terdampak" style="margin-top:10px;">
+            <div class="section-title">KEBUTUHAN MENDESAK</div>
+            <label>Logistik</label><input type="text" id="k-logistik">
+            <label>Peralatan</label><input type="text" id="k-peralatan">
+            <label>Medis</label><input type="text" id="k-medis">
+            <label>Relawan</label><input type="text" id="k-relawan">
+            <div class="section-title">NARASI</div>
+            <textarea id="in-kondisi" rows="3" placeholder="Kondisi Mutakhir"></textarea>
+            <input type="file" accept="image/*" onchange="previewFile(this, 'prev-kejadian')">
+            <img id="prev-kejadian" style="width:100%; border-radius:10px; margin-top:10px; display:none;">
+            <button class="btn-submit" onclick="submitAssessment()">SIMPAN ASSESSMENT</button>
+        </div>
+    </div>
+
+    <div id="p-sp" class="page">
+        <div class="card" style="border-left:5px solid #e67e22;"><h3>TTD Ketua</h3><div id="list-ttd-ketua"></div></div>
+        <div class="card"><h3>Draft SP</h3><div id="list-draf-admin"></div></div>
+    </div>
+
+    <div id="p-action" class="page">
+        <div class="card">
+            <h3>Input Respon NU</h3>
+            <label>Pilih Bencana</label><select id="res-link-id"></select>
+            <div class="cluster-box">
+                <b>Logistik</b>
+                <div class="grid-2"><input type="text" id="log-nama" placeholder="Kegiatan"><input type="number" id="log-paket" placeholder="Paket"></div>
+                <input type="number" id="log-penerima" placeholder="Jiwa" style="margin-top:5px;">
+            </div>
+            <button class="btn-submit" style="background:var(--nu-gold)" onclick="submitGlobalRespon()">SIMPAN SEMUA</button>
+        </div>
+    </div>
+</div>
+
+<div id="viewModal" class="modal">
+    <div class="modal-content"><span onclick="closeModal()" style="float:right; cursor:pointer;">&times;</span><h3 id="m-title">Detail</h3><hr><div id="m-body"></div></div>
+</div>
+<!-- Bagian Tab SPJ -->
+<div id="p-spj" class="page">
+    <div class="card">
+        <h3><i class="fas fa-check-double"></i> Penutupan Laporan & SPJ</h3>
+        <p style="font-size:0.75rem;">Berikut adalah kejadian yang sedang dalam penanganan (On-Operation). Klik "Tutup Laporan" jika tugas lapangan sudah selesai.</p>
+        <div id="list-siap-tutup"></div>
+    </div>
+</div>
+<nav class="bottom-nav">
+    <a href="admin.html" class="nav-item active"><i class="fas fa-chart-line"></i>Dash</a>
+    <a href="admin_verify.html" class="nav-item"><i class="fas fa-inbox"></i>Verify</a>
+    <a href="admin_assess.html" class="nav-item"><i class="fas fa-file-invoice"></i>Assess</a>
+    <a href="admin_instruksi.html" class="nav-item"><i class="fas fa-signature"></i>Instruksi</a>
+    <a href="admin_action.html" class="nav-item"><i class="fas fa-hand-holding-heart"></i>Action</a>
+</nav>
+
+<script>
+    const API_URL = window.location.origin; 
+    let allData = [], allActions = [];
+    const rowsPerPage = 10;
+    let pageK = 1, pageA = 1, pageN = 1;
+
+    const map = L.map('map', { zoomControl: true }).setView([-7.15, 110.14], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+
+    function getIcon(type) {
+        const iconMap = { 'Banjir': 'fa-water', 'Longsor': 'fa-mountain', 'Gempa Bumi': 'fa-house-damage' };
+        return L.divIcon({ html: `<div class="disaster-icon" style="color:#006432"><i class="fas ${iconMap[type] || 'fa-exclamation-triangle'}"></i></div>`, className: 'custom-icon', iconSize: [30, 30] });
+    }
+
+    async function loadData() {
+        try {
+            const resR = await fetch(`${API_URL}/api/reports/admin`);
+            allData = await resR.json();
+            const resA = await fetch(`${API_URL}/api/actions/all`);
+            allActions = await resA.json();
+
+            renderHeroStats();
+            filterKejadian();
+            filterAksi();
+            filterKebutuhan();
+            renderVerify();
+            renderSPQueues();
+            renderDropdowns();
+            renderMarkers();
+        } catch (e) { console.error(e); }
+    }
+
+    function renderHeroStats() {
+        let tJiwa = 0, tPaket = 0, tManfaat = 0;
+        allData.forEach(r => tJiwa += parseInt(r.dampak_manusia?.terdampak || 0));
+        allActions.forEach(a => { tPaket += parseInt(a.jumlah_paket || 0); tManfaat += parseInt(a.penerima_manfaat || 0); });
+        document.getElementById('h-jiwa').innerText = tJiwa.toLocaleString();
+        document.getElementById('h-bencana').innerText = allData.length;
+        document.getElementById('h-paket').innerText = tPaket.toLocaleString();
+        document.getElementById('h-manfaat').innerText = tManfaat.toLocaleString();
+    }
+
+    // 1. MAP MARKERS WITH DETAILED POPUP
+    function renderMarkers() {
+        map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l); });
+        allData.filter(r => r.is_approved).forEach(r => {
+            const marker = L.marker([r.latitude, r.longitude], {icon: getIcon(r.disaster_type)}).addTo(map);
+            marker.bindPopup(`
+                <div style="width:250px; font-family:'Poppins';">
+                    <div class="popup-header"><h4 style="margin:0; color:var(--nu-green);">${r.disaster_type}</h4><small>📍 ${r.city_district}, Kec. ${r.kecamatan || '-'}, Desa ${r.desa || '-'}</small></div>
+                    <div class="popup-stat-grid">
+                        <div class="popup-stat-box box-red">Meninggal<br>${r.dampak_manusia?.meninggal || 0}</div>
+                        <div class="popup-stat-box box-yellow">Hilang<br>${r.dampak_manusia?.hilang || 0}</div>
+                        <div class="popup-stat-box box-green">Terdampak<br>${r.dampak_manusia?.terdampak || 0}</div>
+                    </div>
+                    <p style="font-size:0.7rem; color:#444;"><b>Luasan Dampak:</b><br>${r.sebaran_dampak || r.kondisi_mutakhir || '-'}</p>
+                    <p style="font-size:0.7rem; color:#e67e22; background:#fffcf0; padding:5px; border-radius:5px;"><b>🚨 Kebutuhan:</b> ${r.kebutuhan?.logistik || 'Pangan'}</p>
+                </div>
+            `);
+        });
+    }
+
+    // 2. PAGINATION HELPERS
+    function renderPagUI(id, page, total, fn) {
+        document.getElementById(id).innerHTML = `
+            <button class="btn-page" ${page===1?'disabled':''} onclick="${fn}(-1)"><i class="fas fa-chevron-left"></i></button>
+            <span style="font-size:0.7rem; font-weight:bold;">Hal ${page} / ${total||1}</span>
+            <button class="btn-page" ${page===total||total===0?'disabled':''} onclick="${fn}(1)"><i class="fas fa-chevron-right"></i></button>
+        `;
+    }
+    function resetPages() { pageK=1; pageA=1; pageN=1; }
+
+    // 3. TABLE RENDERING
+    function filterKejadian() {
+        const t = document.getElementById('k-filter-tipe').value;
+        const l = document.getElementById('k-filter-lok').value.toLowerCase();
+        const f = allData.filter(r => (t==="" || r.disaster_type===t) && (r.city_district||"").toLowerCase().includes(l));
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageK-1)*rowsPerPage, pageK*rowsPerPage);
+        document.getElementById('table-kejadian').innerHTML = items.map(r => `<tr><td><b>${r.disaster_type}</b></td><td>${r.city_district}</td><td>${r.is_admin_report?'Admin':'Warga'}</td><td><button class="btn-mini btn-view" onclick="viewKejadian(${r.id})"><i class="fas fa-eye"></i></button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Kosong</td></tr>';
+        renderPagUI('pag-kejadian', pageK, total, 'chK');
+    }
+    window.chK = s => { pageK += s; filterKejadian(); };
+
+    function filterAksi() {
+        const t = document.getElementById('a-filter-tipe').value;
+        const l = document.getElementById('a-filter-lok').value.toLowerCase();
+        const f = allActions.filter(a => (t==="" || a.disaster_type===t) && (a.city_district||"").toLowerCase().includes(l));
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageA-1)*rowsPerPage, pageA*rowsPerPage);
+        document.getElementById('table-aksi').innerHTML = items.map(a => `<tr><td><b>${a.city_district}</b></td><td>${a.kluster}</td><td>${a.jumlah_paket}</td><td>${a.penerima_manfaat}</td><td><button class="btn-mini btn-pdf" onclick="pdfAksi(${a.id})"><i class="fas fa-file-pdf"></i></button></td></tr>`).join('') || '<tr><td colspan="5" style="text-align:center">Kosong</td></tr>';
+        renderPagUI('pag-aksi', pageA, total, 'chA');
+    }
+    window.chA = s => { pageA += s; filterAksi(); };
+
+    function filterKebutuhan() {
+        const t = document.getElementById('n-filter-tipe').value;
+        const l = document.getElementById('n-filter-lok').value.toLowerCase();
+        const i = document.getElementById('n-filter-item').value.toLowerCase();
+        const f = allData.filter(r => (t==="" || r.disaster_type===t) && (r.city_district||"").toLowerCase().includes(l) && JSON.stringify(r.kebutuhan||"").toLowerCase().includes(i) && r.is_approved);
+        const total = Math.ceil(f.length / rowsPerPage);
+        const items = f.slice((pageN-1)*rowsPerPage, pageN*rowsPerPage);
+        document.getElementById('table-kebutuhan').innerHTML = items.map(r => `<tr><td><b>${r.disaster_type}</b></td><td>${r.city_district}</td><td><small>${r.kebutuhan?.logistik || ''} ${r.kebutuhan?.peralatan || ''}</small></td><td><button class="btn-mini btn-view" onclick="viewKejadian(${r.id})"><i class="fas fa-eye"></i></button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center">Kosong</td></tr>';
+        renderPagUI('pag-kebutuhan', pageN, total, 'chN');
+    }
+    window.chN = s => { pageN += s; filterKebutuhan(); };
+
+    // 4. LOGIC OTHERS
+    function viewKejadian(id) {
+        const r = allData.find(x => x.id == id);
+        document.getElementById('m-title').innerText = "Detail Kejadian";
+        document.getElementById('m-body').innerHTML = `<img src="${r.photo || ''}" style="width:100%; border-radius:10px; margin-bottom:10px;"><b>${r.disaster_type} - ${r.city_district}</b><br><small>${r.kecamatan}, Desa ${r.desa || '-'}</small><hr><p><b>Kondisi:</b> ${r.kondisi_mutakhir || r.description}</p><p><b>Jiwa Terdampak:</b> ${r.dampak_manusia?.terdampak || 0} Jiwa</p><p><b>Kebutuhan:</b> Logistik (${r.kebutuhan?.logistik || '-'}), Medis (${r.kebutuhan?.medis || '-'})</p>`;
+        document.getElementById('viewModal').style.display = 'block';
+    }
+
+    function pdfAksi(id) {
+        const a = allActions.find(x => x.id == id);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("LAPORAN AKSI RESPON NU PEDULI", 14, 15);
+        doc.autoTable({ startY: 25, body: [['Bencana', a.disaster_type], ['Wilayah', a.city_district], ['Kegiatan', a.nama_kegiatan], ['Paket', a.jumlah_paket], ['Manfaat', a.penerima_manfaat]] });
+        doc.save(`Respon_${a.id}.pdf`);
+    }
+
+    // OPERATIONALS (Verify, SP, Dropdowns)
+    function renderVerify() {
+        document.getElementById('pending-container').innerHTML = allData.filter(r => !r.is_approved).map(r => `<div class="card"><b>${r.disaster_type}</b><p>${r.description}</p><button class="btn-submit" onclick="approveDirect(${r.id})">Approve</button></div>`).join('') || '<p>Inbox kosong.</p>';
+    }
+    async function approveDirect(id) { await fetch(`${API_URL}/api/reports/approve`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) }); loadData(); }
+
+    function renderSPQueues() {
+        const d = allData.filter(r => r.is_approved && r.status_perintah === 'None');
+        const t = allData.filter(r => r.status_perintah === 'Drafted');
+        document.getElementById('list-draf-admin').innerHTML = d.map(r => `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;"><span>${r.disaster_type}</span><button class="btn-mini btn-view" onclick="openSPModal(${r.id}, 'draft')">Draft</button></div>`).join('');
+        document.getElementById('list-ttd-ketua').innerHTML = t.map(r => `<div style="display:flex; justify-content:space-between; padding:8px; border-bottom:1px solid #eee;"><span>${r.disaster_type}</span><button class="btn-mini btn-pdf" style="background:#f39c12" onclick="openSPModal(${r.id}, 'sign')">TTD</button></div>`).join('');
+    }
+
+    let activeSPId = null;
+    function openSPModal(id, mode) {
+        activeSPId = id; const r = allData.find(x => x.id == id);
+        document.getElementById('viewModal').style.display='block';
+        if(mode==='draft') {
+            document.getElementById('m-title').innerText="Buat SP";
+            document.getElementById('m-body').innerHTML=`<label>Tim</label><textarea id="msp-petugas"></textarea><button class="btn-submit" onclick="subDraft()">Kirim</button>`;
+        } else {
+            document.getElementById('m-title').innerText="TTD Ketua";
+            document.getElementById('m-body').innerHTML=`<p>Tim: ${r.surat_perintah_data.petugas_ditunjuk}</p><button class="btn-submit" onclick="subSign()">Setujui & TTD</button>`;
+        }
+    }
+    async function subDraft() { await fetch(`${API_URL}/api/reports/draft-sp`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id:activeSPId, petugas_ditunjuk:document.getElementById('msp-petugas').value, instruksi_khusus:'Segera'}) }); closeModal(); loadData(); }
+    async function subSign() { const n = prompt("Nama Ketua:"); await fetch(`${API_URL}/api/reports/approve-sp`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id:activeSPId, chairman_name:n}) }); closeModal(); loadData(); }
+
+    function renderDropdowns() {
+        const approved = allData.filter(r => r.is_approved);
+        document.getElementById('assess-report-id').innerHTML = '<option value="">Pilih...</option>' + approved.map(r => `<option value="${r.id}">${r.disaster_type} - ${r.city_district}</option>`).join('');
+        document.getElementById('res-link-id').innerHTML = '<option value="">Pilih...</option>' + allData.filter(r => r.status_perintah === 'Approved').map(r => `<option value="${r.id}">${r.disaster_type} - ${r.city_district}</option>`).join('');
+    }
+function renderSPJ() {
+        const siapTutup = allData.filter(r => r.status_bencana === 'On-Operation');
+        document.getElementById('list-siap-tutup').innerHTML = siapTutup.map(r => `
+            <div class="task-card" style="border-left:5px solid #2ecc71;">
+                <div>
+                    <b>${r.disaster_type} - ${r.city_district}</b><br>
+                    <small>Relawan: ${r.surat_perintah_data?.petugas_ditunjuk || '-'}</small>
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-mini btn-pdf" onclick="cetakLaporanAkhir(${r.id})">Cetak SPJ</button>
+                    <button class="btn-mini" style="background:#2c3e50;" onclick="tutupLaporan(${r.id})">Tutup Laporan</button>
+                </div>
+            </div>
+        `).join('') || '<p style="text-align:center; color:#999;">Tidak ada penanganan aktif.</p>';
+    }
+
+    async function tutupLaporan(id) {
+        if(!confirm("Yakin ingin menutup laporan ini secara permanen?")) return;
+        await fetch(`${API_URL}/api/reports/close`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id })
+        });
+        alert("Laporan Ditutup!");
+        loadData();
+    }
+    async function loadKabupaten() { const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/regencies/33.json`); const data = await res.json(); document.getElementById('in-kab').innerHTML = '<option value="">Kabupaten</option>' + data.map(k => `<option value="${k.id}" data-name="${k.name}">${k.name}</option>`).join(''); }
+    async function loadKecamatan(id) { const res = await fetch(`https://www.emsifa.com/api-wilayah-indonesia/api/districts/${id}.json`); const data = await res.json(); document.getElementById('in-kec').innerHTML = data.map(k => `<option value="${k.id}" data-name="${k.name}">${k.name}</option>`).join(''); }
+    function autoFillAssess(id) { const r = allData.find(x => x.id == id); if(r) { document.getElementById('in-lat').value = r.latitude; document.getElementById('in-lng').value = r.longitude; } }
+    
+    function nav(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('p-' + id).classList.add('active'); el.classList.add('active'); if(id === 'dash') setTimeout(() => map.invalidateSize(), 300); }
+    function closeModal() { document.getElementById('viewModal').style.display = 'none'; }
+    function logout() { localStorage.clear(); window.location.href='login.html'; }
+    function previewFile(input, id) { const reader = new FileReader(); reader.onload = e => { document.getElementById(id).src = e.target.result; document.getElementById(id).style.display = 'block'; }; reader.readAsDataURL(input.files[0]); }
+
+    window.onload = () => { if(!localStorage.getItem('isLoggedIn')) window.location.href='login.html'; loadData(); loadKabupaten(); };
+</script>
+</body>
+</html>
